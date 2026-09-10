@@ -1,0 +1,57 @@
+\documentclass[twocolumn]{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage[utf8]{inputenc}
+\usepackage[portuguese]{babel}
+
+\title{visaoComputacional}
+\author{JOAO PEDRO VIEIRA SANTOS}
+\date{September 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Este trabalho apresenta um programa simples para separar as partes de uma imagem com base na sua textura. Usei 32 imagens em escala de cinza no tamanho 512x512. Para achar as texturas, criei 8 filtros básicos (matrizes 3x3) e apliquei cada um deles em 3 tamanhos diferentes da imagem. Com isso, formei um vetor de 24 dimensões para cada pedaço da foto. No final, usei o algoritmo K-Means para agrupar as texturas parecidas e pintei cada grupo com uma cor diferente. Tudo foi feito usando programação clássica em Python, sem usar inteligência artificial.
+\end{abstract}
+
+\section{Introdução}
+Quando olhamos para uma foto, podemos separar as coisas pelas cores, mas também pelas texturas (por exemplo, diferenciar grama de asfalto). O objetivo deste primeiro trabalho da disciplina é exatamente esse: segmentar uma imagem olhando apenas para a textura dela.
+
+Para fazer isso, o enunciado pedia para usar filtros nas orientações horizontal, vertical, diagonais e circular. O programa desenvolvido lê as imagens tiradas pela câmera, transforma em tons de cinza e tenta descobrir as diferentes áreas usando matemática básica e matrizes.
+
+\section{O Que Foi Feito}
+O programa foi feito em passos simples. Primeiro, criei os filtros, depois extraí as informações das imagens e, no final, agrupei tudo.
+
+\subsection{Criando os Filtros}
+Para identificar linhas e padrões, desenhei 8 pequenas matrizes de números ($3\times3$):
+\begin{itemize}
+    \item \textbf{Filtros de Linhas:} Fiz máscaras para achar linhas deitadas (horizontal), linhas em pé (vertical) e linhas inclinadas ($45^\circ$ e $135^\circ$).
+    \item \textbf{Filtros Redondos:} Fiz duas matrizes baseadas no Laplaciano para achar texturas em formato circular e pontilhadas.
+    \item \textbf{Filtros Extras:} Adicionei mais duas máscaras simples para completar os 8 filtros exigidos pelo trabalho.
+\end{itemize}
+
+\subsection{As 3 Escalas e as 24 Dimensões}
+Em vez de mudar o tamanho do filtro, eu mudei o tamanho da imagem. Peguei a imagem original (512x512), diminuí pela metade (256x256) e depois diminuí de novo (128x128). Fiquei com \textbf{3 escalas}.
+
+Depois, peguei as 3 imagens e passei os 8 filtros nelas usando a função de convolução. O próximo passo foi tirar a média de cada pedacinho para a textura ficar bem marcada na região.
+
+Como eu apliquei 8 filtros em 3 escalas, o total deu \textbf{24 resultados}. Assim, consegui criar um vetor de 24 dimensões (ou seja, 24 informações) para representar cada pixel da tela.
+
+\subsection{O Agrupamento (K-Means)}
+Com o vetor de 24 dimensões pronto, usei o algoritmo \textbf{K-Means}. O trabalho dele é calcular a distância euclidiana entre os vetores de cada pixel. Os pixels que tiverem vetores muito parecidos são agrupados no mesmo conjunto. 
+Eu configurei o K-Means para separar a imagem em 4 grupos (como céu, terra, plantas e asfalto, por exemplo).
+
+\section{Resultados}
+O programa conseguiu processar as 32 imagens sem erros. Depois que o K-Means rodou, mandei o programa pintar cada grupo descoberto com uma cor diferente (Azul, Verde, Vermelho e Amarelo). 
+
+O resultado ficou muito bom. O programa conseguiu separar as texturas parecidas nas fotos de paisagem apenas calculando a variação das matrizes, mesmo sem usar nenhuma técnica moderna de IA. 
+
+\section{Conclusão}
+O trabalho cumpriu tudo que foi pedido no enunciado. Fazer os filtros na mão em formato 3x3 ajudou a entender como o computador "enxerga" bordas e padrões. Construir o vetor de 24 dimensões com as escalas funcionou perfeitamente para alimentar o K-Means e gerar imagens coloridas bem segmentadas.
+
+\vspace{12pt}
+\noindent\textbf{Link para o Código:} \\
+\url{https://github.com/seu-usuario/seu-repositorio}
+
+\end{document}
