@@ -1,0 +1,61 @@
+\documentclass[twocolumn]{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage[utf8]{inputenc}
+\usepackage[portuguese]{babel}
+\usepackage{url}
+
+\title{Trabalho 2 - Visão Computacional \\ \large Calibração de Câmera}
+\author{JOAO PEDRO VIEIRA SANTOS}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Este trabalho apresenta um programa para realizar a calibração de uma câmera e projetar pontos do espaço 3D para a imagem 2D. O objetivo é calcular a matriz intrínseca da câmera e os coeficientes de distorção da lente usando imagens de um tabuleiro de xadrez. Com esses parâmetros em mãos, foi possível remover a distorção das imagens originais e realizar experimentos projetando pontos conhecidos do tabuleiro de volta na imagem para conferir a precisão. Como demonstração extra, um cubo 3D virtual foi renderizado sobre o tabuleiro real. O código foi feito em Python utilizando a biblioteca OpenCV de forma sequencial e simplificada.
+\end{abstract}
+
+\section{Introdução}
+O processo de calibração de câmera é fundamental em Visão Computacional. Ele nos permite relacionar as medidas do mundo real (espaço 3D) com as coordenadas dos pixels na imagem (espaço 2D). Isso é necessário porque as lentes das câmeras introduzem distorções e cada câmera tem parâmetros únicos (como distância focal e o centro ótico).
+
+O trabalho propõe a escolha de imagens de calibração e a execução dos algoritmos clássicos do OpenCV para extrair a matriz da câmera. Além disso, pede para realizarmos a remoção de distorção e criarmos um experimento validando as posições de pontos projetados.
+
+\section{O Que Foi Feito}
+O programa foi desenvolvido em etapas sequenciais utilizando as imagens fornecidas no dataset (imagens ``left01.jpg'' até ``left14.jpg''). 
+
+\subsection{Detecção de Cantos}
+Para que o algoritmo consiga entender as proporções do mundo real, usamos um padrão conhecido: um tabuleiro de xadrez com $9 \times 6$ cantos internos.
+O programa lê todas as imagens e aplica a função \texttt{cv2.findChessboardCorners} para achar a posição (em pixels) desses cantos. Para ter mais precisão na calibração, foi aplicada uma função de refinamento que ajusta a posição do canto para níveis sub-pixel (\texttt{cv2.cornerSubPix}). O programa conseguiu detectar os cantos em todas as imagens válidas fornecidas.
+
+\subsection{Calibração}
+Com os pontos detectados nas imagens (2D) e sabendo a posição real deles no tabuleiro (3D, assumindo Z=0 no plano da folha e que cada quadrado tem um tamanho fixo), usamos a função \texttt{cv2.calibrateCamera}.
+Ela retorna:
+\begin{itemize}
+    \item \textbf{A matriz intrínseca (K):} que guarda as distâncias focais e o centro da imagem.
+    \item \textbf{Os coeficientes de distorção:} que explicam como a lente deforma as bordas da imagem.
+    \item \textbf{Vetores de translação e rotação:} a pose da câmera em relação ao tabuleiro em cada foto.
+\end{itemize}
+
+O erro quadrático médio (RMS) da calibração foi baixo (menos de 0.5 pixels), o que indica que os parâmetros encontrados são muito precisos.
+
+\subsection{Remoção da Distorção}
+Para testar a calibração, as imagens originais que apresentavam um efeito de ``barril'' nas bordas devido à lente passaram por um processo de \textit{undistort}. O OpenCV recalculou a posição dos pixels e gerou uma versão reta das imagens originais. Duas versões foram geradas: uma direta e outra com o corte para focar apenas nos pixels válidos (recorte ROI).
+
+\section{Experimentos e Resultados}
+
+\subsection{Projeção 3D $\rightarrow$ 2D}
+O experimento principal do trabalho foi pegar as coordenadas 3D dos cantos do tabuleiro e forçar o computador a calcular onde esses pontos deveriam aparecer na foto, usando as matrizes geradas na calibração. A função \texttt{cv2.projectPoints} fez essa matemática.
+O programa então desenhou um ponto verde onde o canto foi de fato encontrado na foto, e um ponto vermelho onde a matemática previu que ele estaria. O erro entre os dois pontos foi mínimo (uma média na faixa de $0.2$ pixels), e visualmente eles ficaram sobrepostos perfeitamente, validando a eficácia da calibração.
+
+\subsection{Renderizando o Cubo Virtual (AR)}
+Como bônus, criei a projeção de 8 pontos novos no espaço 3D que não estavam no tabuleiro. Esses pontos formam um cubo (com a altura saindo do plano Z=0 do tabuleiro). O programa ligou esses pontos com linhas coloridas projetadas na imagem, criando um efeito de Realidade Aumentada (AR).
+
+\section{Conclusão}
+O experimento prático demonstrou como a matemática de projeção de câmeras pinhole e modelagem de distorção funciona na prática. Através das ferramentas do OpenCV, foi simples extrair a matriz intrínseca. O experimento de repor os pontos no espaço provou que com a câmera calibrada podemos confiar na conversão entre pixels 2D e o espaço físico 3D.
+
+\vspace{12pt}
+\noindent\textbf{Link para o Código (Git):} \\
+\url{https://github.com/seu-usuario/seu-repositorio}
+
+\end{document}
