@@ -1,0 +1,263 @@
+\documentclass[twocolumn]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[portuguese]{babel}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{geometry}
+\usepackage{microtype}
+
+\geometry{
+    a4paper,
+    top=2.0cm,
+    bottom=2.0cm,
+    left=1.8cm,
+    right=1.8cm
+}
+
+\title{\textbf{Retificação de Perspectiva em Obras de Arte e Fachadas Arquitetônicas Utilizando Transformação Projetiva e OpenCV}}
+
+\author{
+    \textbf{João Pedro Vieira Santos}\thanks{Estudante de Engenharia / Ciência da Computação.} \quad 
+    \textbf{Nome do Integrante 2}\thanks{Coautor do trabalho prático.} \quad 
+    \textbf{Nome do Integrante 3}\thanks{Coautor do trabalho prático.} \\
+    \small Departamento de Informática e Estatística -- Universidade Federal de Santa Catarina (UFSC) \\
+    \small Florianópolis, SC -- Brasil
+}
+
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Este artigo descreve a concepção, fundamentação matemática e implementação em Python e OpenCV de um sistema para retificação de perspectiva em superfícies planares tridimensionais, com ênfase na restauração de obras de arte em galerias e fachadas arquitetônicas. Devido a restrições espaciais e pontos de vista oblíquos, fotografias de pinturas e edifícios sofrem severas distorções projetivas, nas quais retas paralelas convergem para pontos de fuga e proporções métricas são perdidas. Utilizando a teoria de homografia planar no espaço projetivo $\mathbb{P}^2$ com 8 graus de liberdade, o sistema computa a matriz de transformação projetiva $\mathbf{H}$ a partir de 4 correspondências de vértices selecionados manual ou deterministicamente. Foram desenvolvidos algoritmos de ordenação automática de vértices e cálculo autônomo de dimensões de saída baseado em distâncias euclidianas. O sistema foi validado em três cenários empíricos distintos: (i) um quadro em galeria de arte com ângulo de incidência de $\approx 35^\circ$, (ii) um mural artístico do dataset \textit{Oxford VGG Graffiti}, e (iii) uma fachada predial histórica. Os resultados demonstram a recuperação precisa do paralelismo geométrico, eliminação do efeito de fuga e preservação de texturas através de interpolação bicúbica. Todo o código-fonte, imagens e instruções de reprodução encontram-se disponíveis publicamente via Git.
+\end{abstract}
+
+\section{Introdução}
+O registro fotográfico de superfícies planares presentes no mundo real --- tais como pinturas em museus, gravuras históricas, afrescos e fachadas de monumentos arquitetônicos --- frequentemente é condicionado pelas limitações físicas do ambiente. Em galerias e museus, aglomerações de visitantes, barreiras de segurança e a presença de reflexos especulares em coberturas de vidro impedem que a câmera seja posicionada exatamente no centro ótico frontal da obra. Similarmente, no contexto urbano, a captura de fachadas de edifícios altos a partir do nível da rua impõe uma perspectiva ascendente ou diagonal acentuada.
+
+A consequência óptica direta desse posicionamento oblíquo é a \textbf{distorção projetiva} (ou distorção de perspectiva). Por meio dela, formas retangulares tornam-se quadriláteros arbitrários, retas paralelas convergem para pontos de fuga finitos e razões métricas entre largura e altura são corrompidas.
+
+A retificação de perspectiva consiste em estimar a transformação geométrica inversa capaz de mapear a imagem oblíqua para uma vista frontal ortogonal (\textit{fronto-parallel view}), simulando uma câmera canônica perfeitamente perpendicular ao plano do objeto. 
+
+O presente trabalho tem como objetivo conceber, formular e implementar uma solução completa de retificação de perspectiva utilizando a biblioteca de código aberto OpenCV. A aplicação oferece tanto um modo interativo assistido por interface gráfica para seleção dos vértices com o mouse quanto um pipeline de processamento em lote com três estudos de caso documentados.
+
+\section{Fundamentação Teórica}
+
+\subsection{Espaço Projetivo e Coordenadas Homogêneas}
+Em geometria euclidiana bidimensional $\mathbb{R}^2$, pontos são representados pelo par $(x, y)^T$. Sob transformações afins, retas paralelas mantêm-se paralelas. Contudo, na projeção perspectiva realizada pelo modelo de câmera \textit{pinhole}, o paralelismo não é preservado.
+
+Para modelar o encontro de retas no infinito e viabilizar operações projetivas através de álgebra linear matricial, adota-se o espaço projetivo bidimensional $\mathbb{P}^2$ mediante coordenadas homogêneas:
+\begin{equation}
+    \mathbf{p} = \begin{bmatrix} x \\ y \end{bmatrix} \in \mathbb{R}^2 \iff \mathbf{\tilde{p}} = \begin{bmatrix} x \\ y \\ 1 \end{bmatrix} \in \mathbb{P}^2
+\end{equation}
+Dois vetores homogêneos representam o mesmo ponto se diferirem apenas por um escalar não nulo $\lambda \neq 0$:
+\begin{equation}
+    \begin{bmatrix} X \\ Y \\ W \end{bmatrix} \equiv \begin{bmatrix} X/W \\ Y/W \\ 1 \end{bmatrix} = \begin{bmatrix} x \\ y \\ 1 \end{bmatrix}, \quad (W \neq 0)
+\end{equation}
+
+\subsection{Homografia Planar 2D}
+A relação projetiva entre dois planos (neste trabalho, o plano inclinado da pintura na cena e o plano ortogonal de visualização retificada) é descrita por uma transformação projetiva linear denominada \textbf{Homografia Planar} $\mathbf{H} \in \mathbb{R}^{3 \times 3}$:
+\begin{equation}
+    s \begin{bmatrix} x' \\ y' \\ 1 \end{bmatrix} = \mathbf{H} \begin{bmatrix} x \\ y \\ 1 \end{bmatrix} = \begin{bmatrix} h_{11} & h_{12} & h_{13} \\ h_{21} & h_{22} & h_{23} \\ h_{31} & h_{32} & h_{33} \end{bmatrix} \begin{bmatrix} x \\ y \\ 1 \end{bmatrix}
+\end{equation}
+onde $(x, y)$ são as coordenadas de origem, $(x', y')$ são as coordenadas de destino no plano retificado e $s \in \mathbb{R}$ é um fator de escala arbitrário.
+
+Expandindo o sistema e convertendo para coordenadas cartesianas não homogêneas, obtêm-se as equações fundamentais:
+\begin{align}
+    x' &= \frac{h_{11} x + h_{12} y + h_{13}}{h_{31} x + h_{32} y + h_{33}} \label{eq:x_proj} \\
+    y' &= \frac{h_{21} x + h_{22} y + h_{23}}{h_{31} x + h_{32} y + h_{33}} \label{eq:y_proj}
+\end{align}
+
+\subsection{Graus de Liberdade e Resolução via DLT}
+Embora a matriz $\mathbf{H}$ contenha 9 coeficientes, a igualdade é válida a menos de um escalar multiplicativo. Logo, existem estritamente \textbf{8 graus de liberdade}. 
+
+Multiplicando cruzadamente as Equações (\ref{eq:x_proj}) e (\ref{eq:y_proj}), cada correspondência de ponto $(x_i, y_i) \leftrightarrow (x'_i, y'_i)$ produz duas equações lineares independentes:
+\begin{align}
+    x_i h_{11} + y_i h_{12} + h_{13} - x'_i x_i h_{31} - x'_i y_i h_{32} - x'_i h_{33} &= 0 \\
+    x_i h_{21} + y_i h_{22} + h_{23} - y'_i x_i h_{31} - y'_i y_i h_{32} - y'_i h_{33} &= 0
+\end{align}
+
+Agrupando $n = 4$ pontos em que não haja três colineares, monta-se o sistema matricial homogêneo $\mathbf{A} \mathbf{h} = \mathbf{0}$, onde $\mathbf{A}$ tem dimensão $8 \times 9$ e $\mathbf{h} = [h_{11}, \dots, h_{33}]^T$. O algoritmo \textit{Direct Linear Transformation} (DLT) resolve o sistema por meio da Decomposição em Valores Singulares (SVD) de $\mathbf{A}$, sendo $\mathbf{h}$ o autovetor associado ao menor valor singular. No OpenCV, essa resolução exata de 4 pontos é encapsulada na função \texttt{cv2.getPerspectiveTransform}.
+
+\subsection{Mapeamento Inverso e Interpolação}
+Se o mapeamento direto de cada pixel de origem fosse aplicado para a imagem de destino (\textit{forward warping}), surgiram ``buracos'' (lacunas de amostragem) devido ao arredondamento discreto de coordenadas. 
+
+Por esse motivo, o OpenCV implementa o \textbf{mapeamento inverso} (\textit{backward warping}) através da função \texttt{cv2.warpPerspective}: para cada pixel de destino $(x', y')$, calcula-se sua pré-imagem no plano original via $\mathbf{H}^{-1}$:
+\begin{equation}
+    \mathbf{\tilde{p}} = \mathbf{H}^{-1} \mathbf{\tilde{p}}'
+\end{equation}
+Como as coordenadas resultantes $(x, y)$ são números reais contínuos, os valores de intensidade e cor RGB são interpolados. Neste trabalho, utilizou-se a interpolação bicúbica (\texttt{cv2.INTER\_CUBIC}), ponderada por polinômios cúbicos sobre uma vizinhança $4 \times 4$ de pixels, preservando nitidez sem introduzir artefatos serrilhados.
+
+\section{Metodologia e Implementação}
+
+O pipeline de processamento foi projetado com uma arquitetura modular composta pelas seguintes etapas:
+
+\begin{figure}[!ht]
+    \centering
+    \fbox{\parbox{0.9\columnwidth}{
+        \centering
+        \small
+        \textbf{Pipeline da Aplicação:} \\
+        $\downarrow$ Leitura da Imagem de Entrada \\
+        $\downarrow$ Aquisição dos 4 Vértices (GUI / Script) \\
+        $\downarrow$ Ordenação Determinística dos Pontos \\
+        $\downarrow$ Estimativa Euclidiana das Dimensões ($W \times H$) \\
+        $\downarrow$ Cálculo da Matriz de Homografia $\mathbf{H}$ \\
+        $\downarrow$ \textit{Backward Warping} Bicúbico (\texttt{warpPerspective}) \\
+        $\downarrow$ Geração de Painel Comparativo e Relatório
+    }}
+    \caption{Fluxograma sequencial do sistema desenvolvido.}
+    \label{fig:pipeline}
+\end{figure}
+
+\subsection{Ordenação Determinística de Vértices}
+Em aplicações práticas e interfaces com o usuário, a ordem dos cliques nem sempre segue um padrão estrito. Para garantir invariância à sequência de seleção, implementou-se a função \texttt{ordenar\_pontos}, baseada nas propriedades de soma e diferença vetorial:
+\begin{itemize}
+    \item \textbf{Topo-Esquerdo (TL):} minimiza a soma $(x + y)$.
+    \item \textbf{Fundo-Direito (BR):} maximiza a soma $(x + y)$.
+    \item \textbf{Topo-Direito (TR):} minimiza a diferença $(y - x)$.
+    \item \textbf{Fundo-Esquerdo (BL):} maximiza a diferença $(y - x)$.
+\end{itemize}
+
+\subsection{Cálculo Autônomo das Dimensões de Destino}
+Para evitar deformações de estiramento ou encolhimento no quadro retificado, as dimensões finais de largura ($W_{\text{dst}}$) e altura ($H_{\text{dst}}$) são estimadas de forma adaptativa com base nas maiores distâncias euclidianas dos lados opostos:
+\begin{align}
+    W_{\text{dst}} &= \max \left( \|\mathbf{p}_{\text{TR}} - \mathbf{p}_{\text{TL}}\|_2, \; \|\mathbf{p}_{\text{BR}} - \mathbf{p}_{\text{BL}}\|_2 \right) \\
+    H_{\text{dst}} &= \max \left( \|\mathbf{p}_{\text{BL}} - \mathbf{p}_{\text{TL}}\|_2, \; \|\mathbf{p}_{\text{BR}} - \mathbf{p}_{\text{TR}}\|_2 \right)
+\end{align}
+O sistema também suporta a imposição de razões de aspecto conhecidas a priori (ex.: $4:3$, $16:9$, ou razão áurea).
+
+\subsection{Interface Interativa e Modos de Operação}
+O programa foi construído com dupla modalidade de execução:
+\begin{enumerate}
+    \item \textbf{Modo Demonstração (Batch):} Executa o processamento em lote dos casos de teste, gerando métricas, matrizes e imagens compostas sem requerer ambiente gráfico ativo.
+    \item \textbf{Modo Interativo (GUI):} Utiliza \textit{callbacks} de mouse do OpenCV (\texttt{cv2.setMouseCallback}). Ao clicar na imagem, o usuário recebe realimentação visual em tempo real (polígono ciano semitransparente conectando os vértices). As teclas de atalho oferecem limpeza da seleção (\texttt{r}), confirmação (\texttt{c} ou \texttt{ENTER}) e salvamento (\texttt{s}).
+\end{enumerate}
+
+\section{Resultados e Discussão}
+
+Foram conduzidos experimentos empíricos em três cenários com diferentes características de textura, iluminação e ângulo de fuga.
+
+\subsection{Cenário 1: Quadro a Óleo em Galeria de Museu}
+Este cenário simula um visitante em uma galeria observando uma pintura a óleo com moldura nobre a partir de um ângulo lateral de $\approx 35^\circ$. A imagem de entrada apresenta dimensão original de $1280 \times 800$ pixels. 
+
+Os vértices identificados nos cantos externos da moldura foram:
+$\text{TL}=(220, 180)$, $\text{TR}=(920, 110)$, $\text{BR}=(940, 630)$ e $\text{BL}=(210, 520)$. 
+
+A matriz de homografia estimada $\mathbf{H}_1$ foi:
+\begin{equation}
+    \mathbf{H}_1 = \begin{bmatrix}
+        1.962468 & 0.057720 & -442.132452 \\
+        0.206465 & 2.064653 & -417.059826 \\
+        0.000916 & 0.000146 & 1.000000
+    \end{bmatrix}
+\end{equation}
+
+A Figura \ref{fig:cenario1} exibe a comparação entre a imagem inclinada com os vértices destacados e a versão retificada. Observa-se a completa eliminação do efeito de fuga lateral: as bordas da moldura tornaram-se rigorosamente paralelas e perpendiculares, e as pinceladas da tela mantiveram sua definição intacta graças à interpolação cúbica.
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=\columnwidth]{output/cenario1_museu_comparacao.jpg}
+    \caption{Cenário 1: Retificação de obra de arte em galeria sob perspectiva oblíqua. [A] Imagem original com vértices marcados. [B] Imagem retificada frontal.}
+    \label{fig:cenario1}
+\end{figure}
+
+\subsection{Cenário 2: Mural Urbano (Oxford VGG Graffiti)}
+Para validar o algoritmo sobre um benchmark acadêmico consagrado na literatura de Visão Computacional, utilizou-se a imagem \texttt{graf3.png} do conjunto de dados \textit{Oxford Visual Geometry Group} ($800 \times 640$ pixels). Trata-se de um grafite sobre alvenaria de tijolos capturado com expressiva inclinação de ponto de vista.
+
+A homografia calculada $\mathbf{H}_2$ recuperou as dimensões $520 \times 387$ pixels com a matriz:
+\begin{equation}
+    \mathbf{H}_2 = \begin{bmatrix}
+        1.146774 & 0.159274 & -228.877032 \\
+        -0.147579 & 1.147840 & -93.221004 \\
+        0.000111 & 0.000160 & 1.000000
+    \end{bmatrix}
+\end{equation}
+
+Como demonstrado na Figura \ref{fig:cenario2}, as linhas horizontais de rejunte dos tijolos, que convergiam fortemente para a direita na imagem original, foram restituídas ao paralelismo ortogonal horizontal perfeito.
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=\columnwidth]{output/cenario2_grafite_comparacao.jpg}
+    \caption{Cenário 2: Retificação de pintura mural urbana do dataset Oxford VGG. [A] Imagem inclinada original. [B] Imagem retificada.}
+    \label{fig:cenario2}
+\end{figure}
+
+\subsection{Cenário 3: Fachada Arquitetônica Predial}
+O terceiro caso avalia a retificação de uma fachada predial histórica (\texttt{building.jpg}, $868 \times 600$ pixels). Em fotografias urbanas ao nível do solo, as colunas e vãos de janelas sofrem convergência perspectiva tanto vertical quanto horizontal.
+
+Os vértices selecionados na seção principal da fachada produziram a matriz:
+\begin{equation}
+    \mathbf{H}_3 = \begin{bmatrix}
+        1.107528 & -0.044301 & -171.223859 \\
+        0.241552 & 1.083430 & -321.547804 \\
+        0.000160 & 0.000053 & 1.000000
+    \end{bmatrix}
+\end{equation}
+
+A Figura \ref{fig:cenario3} ilustra o resultado. O alinhamento dos vãos das janelas e das linhas do beiral do telhado confirma a eficácia do mapeamento projetivo em restaurar a ortogonalidade requerida em plantas baixas e levantamentos cadastrais arquitetônicos.
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=\columnwidth]{output/cenario3_fachada_comparacao.jpg}
+    \caption{Cenário 3: Fachada arquitetônica com correção de convergência de linhas de janelas e colunas.}
+    \label{fig:cenario3}
+\end{figure}
+
+\subsection{Análise Comparativa e Quantitativa}
+A Tabela \ref{tab:resumo_metricas} consolida os parâmetros geométricos de entrada e saída obtidos para os três cenários analisados.
+
+\begin{table}[!ht]
+    \centering
+    \caption{Resumo quantitativo das transformações perspectivas.}
+    \label{tab:resumo_metricas}
+    \small
+    \begin{tabular}{lccc}
+        \toprule
+        \textbf{Métrica / Parâmetro} & \textbf{Cenário 1} & \textbf{Cenário 2} & \textbf{Cenário 3} \\
+        \midrule
+        Tipo de Objeto & Quadro Galeria & Mural Tijolos & Fachada Predial \\
+        Tamanho Original & $1280 \times 800$ & $800 \times 640$ & $868 \times 600$ \\
+        Tamanho Retificado & $738 \times 553$ & $520 \times 387$ & $315 \times 260$ \\
+        Razão $W/H$ Final & $1.33$ ($4:3$) & $1.34$ & $1.21$ \\
+        Termo Projetivo $h_{31}$ & $9.15 \times 10^{-4}$ & $1.11 \times 10^{-4}$ & $1.60 \times 10^{-4}$ \\
+        Termo Projetivo $h_{32}$ & $1.45 \times 10^{-4}$ & $1.60 \times 10^{-4}$ & $5.32 \times 10^{-5}$ \\
+        Interpolação & Bicúbica & Bicúbica & Bicúbica \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Nota-se que os termos da terceira linha da matriz ($h_{31}$ e $h_{32}$) refletem a intensidade da projeção de fuga ao longo dos eixos $x$ e $y$. No Cenário 1, onde a câmera estava posicionada em um ângulo lateral acentuado, o termo $h_{31}$ atingiu seu maior valor relativo ($9.15 \times 10^{-4}$), demonstrando a forte compressão angular corrigida com sucesso pelo algoritmo.
+
+\section{Conclusão}
+Neste trabalho, foi implementada com êxito uma aplicação completa de transformação de perspectiva em OpenCV voltada à retificação de obras de arte e fachadas prediais. 
+
+A formulação matemática baseada em homografia planar no espaço projetivo $\mathbb{P}^2$ com 8 graus de liberdade demonstrou ser uma ferramenta precisa e matematicamente elegante. A combinação de algoritmos determinísticos para ordenação de vértices com a interpolação bicúbica garantiu robustez de execução e elevada fidelidade visual, eliminando as deformações angulares e restituindo a geometria frontal ortogonal.
+
+A aplicação mostrou-se versátil tanto para uso interativo pelo usuário quanto para processamento automatizado, com aplicações práticas diretas em digitalização de acervos de museus, documentação de patrimônio cultural e fotogrametria arquitetônica.
+
+\vspace{10pt}
+\noindent\textbf{Repositório Git do Projeto:} \\
+O código-fonte integral, scripts de demonstração, imagens e este relatório estão disponíveis publicamente no repositório GitHub: \\
+\url{https://github.com/JPeeeeee/visaoComputacional}
+
+\begin{thebibliography}{9}
+\bibitem{szeliski2022}
+R. Szeliski, \textit{Computer Vision: Algorithms and Applications}, 2nd ed. Springer, 2022.
+
+\bibitem{hartley2004}
+R. Hartley and A. Zisserman, \textit{Multiple View Geometry in Computer Vision}, 2nd ed. Cambridge University Press, 2004.
+
+\bibitem{opencv2024}
+OpenCV Team, \textit{Geometric Image Transformations: getPerspectiveTransform and warpPerspective}, Documentação Oficial OpenCV, 2024. \url{https://docs.opencv.org/}.
+
+\bibitem{mikolajczyk2005}
+K. Mikolajczyk et al., ``A comparison of affine region detectors,'' \textit{International Journal of Computer Vision}, vol. 65, no. 1-2, pp. 43--72, 2005.
+\end{thebibliography}
+
+\end{document}

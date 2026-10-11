@@ -1,0 +1,42 @@
+RELATORIO DOS PARAMETROS DE HOMOGRAFIA - TRABALHO 3
+============================================================
+
+Cenario: Quadro a Oleo em Galeria de Museu (cenario1_museu)
+Dimensoes Originais: 1280x800
+Dimensoes Retificadas: 738x553
+Pontos de Origem (TL, TR, BR, BL):
+[[220. 180.]
+ [920. 110.]
+ [940. 630.]
+ [210. 520.]]
+Matriz de Homografia H:
+[[ 1.96246780e+00  5.77196413e-02 -4.42132452e+02]
+ [ 2.06465261e-01  2.06465261e+00 -4.17059826e+02]
+ [ 9.15713592e-04  1.45511823e-04  1.00000000e+00]]
+
+Cenario: Mural Artistico Urbano (Oxford VGG Graffiti) (cenario2_grafite)
+Dimensoes Originais: 800x640
+Dimensoes Retificadas: 520x387
+Pontos de Origem (TL, TR, BR, BL):
+[[185. 105.]
+ [675. 168.]
+ [648. 555.]
+ [135. 465.]]
+Matriz de Homografia H:
+[[ 1.14677427e+00  1.59274205e-01 -2.28877032e+02]
+ [-1.47579426e-01  1.14783998e+00 -9.32210040e+01]
+ [ 1.11211997e-04  1.60488643e-04  1.00000000e+00]]
+
+Cenario: Fachada Arquitetonica de Edificio (cenario3_fachada)
+Dimensoes Originais: 868x600
+Dimensoes Retificadas: 315x260
+Pontos de Origem (TL, TR, BR, BL):
+[[165. 260.]
+ [470. 192.]
+ [485. 452.]
+ [175. 510.]]
+Matriz de Homografia H:
+[[ 1.10752819e+00 -4.43011277e-02 -1.71223859e+02]
+ [ 2.41551598e-01  1.08342996e+00 -3.21547804e+02]
+ [ 1.59931242e-04  5.31767949e-05  1.00000000e+00]]
+
