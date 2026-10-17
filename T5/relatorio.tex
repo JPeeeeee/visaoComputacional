@@ -6,7 +6,7 @@
 \usepackage{booktabs}
 
 \title{Trabalho 5 - Visão Computacional \\ \large Depuração e Otimização de MLP from Scratch no Dataset Iris}
-\author{JOAO PEDRO VIEIRA SANTOS \and INTEGRANTE DA DUPLA}
+\author{Joao Pedro Vieira Santos \and Pedro Henrique Gurski de Oliveira \and Ulisses Curvello Ferreira}
 \date{\today}
 
 \begin{document}
@@ -45,7 +45,7 @@ A Figura~\ref{fig:acuracia} e a Tabela~\ref{tab:classes} comparam a acurácia po
 
 \begin{figure}[!ht]
     \centering
-    \includegraphics[width=\columnwidth]{output/acuracia_por_classe.png}
+    \includegraphics[width=\columnwidth]{acuracia_por_classe.png}
     \caption{Comparação da acurácia por espécie: modelo original vs. modelo corrigido.}
     \label{fig:acuracia}
 \end{figure}
@@ -75,7 +75,7 @@ Avaliando a curva de erro ao longo de $300$ épocas (Figura~\ref{fig:convergenci
 
 \begin{figure}[!ht]
     \centering
-    \includegraphics[width=\columnwidth]{output/convergencia_perda_treino_val.png}
+    \includegraphics[width=\columnwidth]{convergencia_perda_treino_val.png}
     \caption{Curvas de convergência da perda e evolução da acurácia.}
     \label{fig:convergencia}
 \end{figure}
@@ -87,7 +87,7 @@ Conforme ilustrado na Figura~\ref{fig:overfit}, até a época $\approx 250$ o mo
 
 \begin{figure}[!ht]
     \centering
-    \includegraphics[width=0.92\columnwidth]{output/analise_overfitting.png}
+    \includegraphics[width=0.92\columnwidth]{analise_overfitting.png}
     \caption{Curva de perda evidenciando o início de overfitting por volta da época 250.}
     \label{fig:overfit}
 \end{figure}
@@ -97,7 +97,7 @@ A Figura~\ref{fig:matriz} apresenta a matriz de confusão comparativa. Enquanto 
 
 \begin{figure}[!ht]
     \centering
-    \includegraphics[width=\columnwidth]{output/matriz_confusao_3classes.png}
+    \includegraphics[width=\columnwidth]{matriz_confusao_3classes.png}
     \caption{Matrizes de confusão: original (esquerda) e corrigida (direita).}
     \label{fig:matriz}
 \end{figure}
