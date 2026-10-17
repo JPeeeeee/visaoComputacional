@@ -1,0 +1,32 @@
+RELATORIO DE ESTATISTICAS DESCRITIVAS - DATASET IRIS
+======================================================================
+
+1. FREQUENCIA POR CATEGORIA:
+            Frequencia Absoluta  Frequencia Relativa (%)
+categoria                                               
+setosa                       50                33.333333
+versicolor                   50                33.333333
+virginica                    50                33.333333
+
+2. ESTATISTICAS GERAIS (GLOBAL):
+                    Media  Desvio Padrao  Moda  Min  Max
+Variavel                                                
+comprimento_sepala  5.843          0.828   5.0  4.3  7.9
+largura_sepala      3.057          0.436   3.0  2.0  4.4
+comprimento_petala  3.758          1.765   1.4  1.0  6.9
+largura_petala      1.199          0.762   0.2  0.1  2.5
+
+3. ESTATISTICAS POR CATEGORIA:
+ Categoria           Variavel  Media  Desvio Padrao  Moda  Min  Max
+    setosa comprimento_sepala  5.006          0.352   5.0  4.3  5.8
+    setosa     largura_sepala  3.428          0.379   3.4  2.3  4.4
+    setosa comprimento_petala  1.462          0.174   1.4  1.0  1.9
+    setosa     largura_petala  0.246          0.105   0.2  0.1  0.6
+versicolor comprimento_sepala  5.936          0.516   5.5  4.9  7.0
+versicolor     largura_sepala  2.770          0.314   3.0  2.0  3.4
+versicolor comprimento_petala  4.260          0.470   4.5  3.0  5.1
+versicolor     largura_petala  1.326          0.198   1.3  1.0  1.8
+ virginica comprimento_sepala  6.588          0.636   6.3  4.9  7.9
+ virginica     largura_sepala  2.974          0.322   3.0  2.2  3.8
+ virginica comprimento_petala  5.552          0.552   5.1  4.5  6.9
+ virginica     largura_petala  2.026          0.275   1.8  1.4  2.5

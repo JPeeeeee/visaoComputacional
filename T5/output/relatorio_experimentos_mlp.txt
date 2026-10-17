@@ -1,0 +1,22 @@
+RELATORIO DOS EXPERIMENTOS E DEPURACAO DA MLP - TRABALHO 5
+======================================================================
+
+1. COMPARATIVO DE ACURACIA GERAL:
+   - Original:  90.00%
+   - Corrigido: 96.67%
+
+2. ACURACIA POR CLASSE:
+   - Setosa      : Original=100.00% | Corrigido=100.00%
+   - Versicolor  : Original=100.00% | Corrigido= 90.00%
+   - Virginica   : Original= 62.50% | Corrigido=100.00%
+
+3. RELATORIO DETALHADO DO MODELO CORRIGIDO:
+              precision    recall  f1-score   support
+
+      setosa       1.00      1.00      1.00        10
+  versicolor       1.00      0.90      0.95        10
+   virginica       0.91      1.00      0.95        10
+
+    accuracy                           0.97        30
+   macro avg       0.97      0.97      0.97        30
+weighted avg       0.97      0.97      0.97        30

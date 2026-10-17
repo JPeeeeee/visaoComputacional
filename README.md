@@ -19,17 +19,40 @@ Repositório contendo os trabalhos práticos desenvolvidos na disciplina de **Vi
 - **Destaques**: Interface gráfica interativa para seleção de vértices com mouse, ordenação determinística de cantos, estimativa euclidiana de aspecto e artigo científico em formato LaTeX (`relatorio.tex`).
 - **Tecnologias**: Python, OpenCV (`getPerspectiveTransform`, `warpPerspective`), NumPy.
 
+### 🔹 [Trabalho 4 - Análise Exploratória, PCA e Classificação K-NN no Iris Dataset](./T4/)
+- **Descrição**: Análise estatística descritiva completa, correlação entre dimensões de sépala e pétala, redução de dimensionalidade por PCA (95.8% de variância em 2D) e classificação supervisionada com K-NN (divisão 80/20) atingindo até 96.67% de acurácia.
+- **Destaques**: Gráficos de alta resolução de distribuição 4D (pairplot, boxplots), projeção PCA, matriz de confusão e fronteiras de decisão, acompanhado de relatório sucinto em LaTeX.
+- **Tecnologias**: Python, Scikit-Learn, Pandas, NumPy, SciPy, Matplotlib, Seaborn.
+
+### 🔹 [Trabalho 5 - Depuração e Otimização de MLP from Scratch](./T5/)
+- **Descrição**: Estudo detalhado, depuração de erros matemáticos e otimização de uma Rede Neural Multi-Layer Perceptron (MLP) construída do zero (*from scratch*) em NumPy para o dataset Iris.
+- **Destaques**: Diagnóstico de 5 falhas no código original (incluindo inferência sem ativação e erro de atualização de bias/pesos), implementação corrigida com Softmax/Cross-Entropy, normalização Z-score e partição balanceada alcançando 96.67% de acurácia nas 3 classes, além de estudo aprofundado de convergência e overfitting. Acompanha notebook interativo (`.ipynb`) e artigo sucinto em LaTeX.
+- **Tecnologias**: Python, NumPy, Pandas, Matplotlib, Seaborn, Scikit-Learn, Jupyter Notebook.
+
 ---
 
-## 🚀 Como Executar o Trabalho 3
+## 🚀 Como Executar os Projetos
 
+### Trabalho 3 (Transformação Perspectiva)
 ```bash
 cd T3
 pip install -r requirements.txt
+python main.py
+```
 
-# Executar suíte de demonstração e gerar figuras para o relatório:
+### Trabalho 4 (Iris Dataset - PCA & K-NN)
+```bash
+cd T4
+pip install -r requirements.txt
+python main.py
+```
+
+### Trabalho 5 (MLP from Scratch - Depuração & Análise)
+```bash
+cd T5
+pip install -r requirements.txt
 python main.py
 
-# Ou executar no modo interativo com seleção por cliques de mouse:
-python main.py --interativo
+# Para executar o Jupyter Notebook:
+jupyter notebook NN_scratch_iris_resolvido.ipynb
 ```

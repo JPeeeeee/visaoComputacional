@@ -1,0 +1,115 @@
+\documentclass[twocolumn]{article}
+\usepackage{graphicx}
+\usepackage[utf8]{inputenc}
+\usepackage[portuguese]{babel}
+\usepackage{url}
+\usepackage{booktabs}
+
+\title{Trabalho 5 - Visão Computacional \\ \large Depuração e Otimização de MLP from Scratch no Dataset Iris}
+\author{JOAO PEDRO VIEIRA SANTOS \and INTEGRANTE DA DUPLA}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Este trabalho apresenta um estudo aprofundado, depuração matemática e experimentação prática sobre uma implementação de rede neural Multi-Layer Perceptron (MLP) construída do zero (\textit{from scratch}) em NumPy para classificação do dataset Iris. O código original apresentava falhas críticas na retropropagação, ausência de ativação na inferência e partição desbalanceada, resultando em acurácia nula na classe \textit{Iris-virginica}. Após a correção da regra da cadeia, incorporação da função Softmax com perda de Entropia Cruzada, padronização Z-score e partição estratificada (80/20), a rede atingiu $96{,}67\%$ de acurácia global, classificando com excelência todas as três espécies. Foram analisadas a convergência da perda, o comportamento dos gradientes e o surgimento de \textit{overfitting} em modelos superdimensionados. O código, os experimentos e o notebook interativo encontram-se disponíveis no repositório Git.
+\end{abstract}
+
+\section{Introdução}
+Redes neurais Multi-Layer Perceptron (MLP) constituem um dos pilares do aprendizado profundo. A compreensão detalhada de suas operações fundamentais --- propagação direta (\textit{forward pass}), cálculo da função de perda e retropropagação do erro (\textit{backpropagation}) --- é essencial para diagnosticar problemas numéricos e estruturais em modelos de aprendizado de máquina.
+
+Neste trabalho, investigamos a implementação de uma MLP \textit{from scratch} aplicada ao conjunto de dados Iris (150 amostras, 4 atributos contínuos e 3 classes: \textit{Setosa}, \textit{Versicolor} e \textit{Virginica}). O objetivo foi depurar a rede original, corrigir os erros que impediam a convergência na terceira classe, analisar as curvas de aprendizado e estudar o fenômeno de \textit{overfitting}.
+
+\section{Diagnóstico e Depuração do Código Original}
+Ao analisar a execução da implementação original no arquivo \texttt{NN\_scratch\_iris\_original.ipynb}, identificaram-se cinco falhas conceituais e de codificação determinantes para o baixo desempenho na classe \textit{Virginica}:
+
+\begin{enumerate}
+    \item \textbf{\texttt{predict} sem função de ativação:} No método \texttt{predict}, o cálculo da saída era puramente linear ($X W_h + b_h) W_o + b_o$, sem aplicar a função sigmoide. Como a rede foi treinada com valores ativados entre $0$ e $1$, a inferência recebia números em escalas arbitrárias, destruindo as previsões.
+    \item \textbf{Atualização prematura de pesos no Backpropagation:} Na função \texttt{Backpropagation\_Algorithm}, a matriz de pesos da camada de saída $\mathbf{W}_{\text{out}}$ era atualizada antes do cálculo do gradiente da camada oculta $\delta_{\text{hidden}}$. Pela regra da cadeia, $\delta_{\text{hidden}}$ deve utilizar obrigatoriamente os pesos originais do \textit{forward pass}.
+    \item \textbf{Múltipla atualização de Bias em loops aninhados:} A instrução de atualização do bias de saída estava localizada dentro do loop da camada oculta, fazendo com que o bias fosse somado $5$ vezes por amostra ($H$ vezes). Analogamente, o bias oculto era somado $4$ vezes ($D_{\text{in}}$ vezes), gerando gradientes desproporcionais.
+    \item \textbf{Particionamento desbalanceado:} O código original aplicava um embaralhamento com semente fixa que gerava um conjunto de teste contendo $20$ amostras de \textit{Setosa}, $9$ de \textit{Versicolor} e apenas $1$ de \textit{Virginica}, distorcendo as métricas de avaliação.
+    \item \textbf{Saturação da Sigmoide por Falta de Normalização:} Os atributos de entrada atingem até $7{,}9$ cm. Sem padronização, a combinação linear $z = \sum x_i w_i + b$ ultrapassa facilmente $|z| > 5$, onde a derivada da sigmoide aproxima-se de zero ($\sigma'(z) \approx 0$), paralisando o aprendizado (\textit{vanishing gradient}).
+\end{enumerate}
+
+\section{Implementação Corrigida e Classificação das Três Classes}
+Para solucionar as falhas, implementou-se a classe \texttt{CorrectedMLP} com as seguintes melhorias:
+\begin{itemize}
+    \item \textbf{Formulação Vetorizada da Regra da Cadeia:} O gradiente da camada oculta $\delta_{\text{hidden}} = (\delta_{\text{out}} \mathbf{W}_2^T) \odot f'(a_1)$ é calculado utilizando a matriz $\mathbf{W}_2$ original, com atualizações únicas e exatas para pesos e bias.
+    \item \textbf{Softmax e Entropia Cruzada:} Adotou-se a função Softmax na saída associada à perda de \textit{Cross-Entropy}, cuja derivada simplificada $\nabla_z \mathcal{L} = \hat{\mathbf{y}} - \mathbf{y}$ evita o termo multiplicativo de saturação $\sigma'(z)$.
+    \item \textbf{Padronização e Estratificação:} Os dados foram normalizados via Z-score ($\mu=0, \sigma=1$) e divididos com \texttt{stratify=y} em $80\%$ treino ($120$ amostras) e $20\%$ teste ($10$ por classe).
+\end{itemize}
+
+A Figura~\ref{fig:acuracia} e a Tabela~\ref{tab:classes} comparam a acurácia por classe entre a implementação original e a depurada. O modelo corrigido alcançou \textbf{$96{,}67\%$} de acurácia global, eliminando a falha crônica em \textit{Virginica}.
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=\columnwidth]{output/acuracia_por_classe.png}
+    \caption{Comparação da acurácia por espécie: modelo original vs. modelo corrigido.}
+    \label{fig:acuracia}
+\end{figure}
+
+\begin{table}[!ht]
+    \centering
+    \caption{Desempenho por Classe no Conjunto de Teste.}
+    \label{tab:classes}
+    \small
+    \begin{tabular}{lcccc}
+        \toprule
+        \textbf{Espécie} & \textbf{Original} & \textbf{Corrigido} & \textbf{Precisão} & \textbf{Revocação} \\
+        \midrule
+        \textit{Setosa} & $100{,}0\%$ & $100{,}0\%$ & $1{,}00$ & $1{,}00$ \\
+        \textit{Versicolor} & $100{,}0\%$ & $90{,}0\%$ & $1{,}00$ & $0{,}90$ \\
+        \textit{Virginica} & $62{,}5\%$ & $100{,}0\%$ & $0{,}91$ & $1{,}00$ \\
+        \midrule
+        \textbf{Global} & $90{,}0\%$ & \textbf{96,67\%} & $0{,}97$ & $0{,}97$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\section{Convergência, Erros e Overfitting}
+
+\subsection{Convergência do Modelo Ajustado}
+Avaliando a curva de erro ao longo de $300$ épocas (Figura~\ref{fig:convergencia}), observa-se que a perda de treino e a perda de validação decrescem suavemente e de forma conjunta. A acurácia estabiliza acima de $95\%$ a partir da época $150$, demonstrando excelente estabilidade numérica e ausência de oscilações bruscas.
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=\columnwidth]{output/convergencia_perda_treino_val.png}
+    \caption{Curvas de convergência da perda e evolução da acurácia.}
+    \label{fig:convergencia}
+\end{figure}
+
+\subsection{Diagnóstico de Overfitting}
+Para analisar o fenômeno de superajustamento (\textit{overfitting}), treinou-se intencionalmente uma rede superdimensionada ($32$ neurônios na camada oculta, taxa de aprendizado $\eta=0{,}5$ e $1200$ épocas sem regularização).
+
+Conforme ilustrado na Figura~\ref{fig:overfit}, até a época $\approx 250$ o modelo generaliza bem. Após esse limiar, a perda no conjunto de treino continua decrescendo em direção a zero, enquanto a perda no conjunto de teste estagna e passa a divergir para cima. Isso evidencia que a rede começou a memorizar ruídos das amostras de treino, caracterizando o ponto ideal para aplicação de parada antecipada (\textit{Early Stopping}).
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.92\columnwidth]{output/analise_overfitting.png}
+    \caption{Curva de perda evidenciando o início de overfitting por volta da época 250.}
+    \label{fig:overfit}
+\end{figure}
+
+\subsection{Matriz de Confusão e Fronteiras de Decisão}
+A Figura~\ref{fig:matriz} apresenta a matriz de confusão comparativa. Enquanto o modelo original confundia severamente exemplares de \textit{Virginica}, a versão depurada obteve $29$ acertos em $30$ testes, errando apenas um único exemplar limítrofe entre \textit{Versicolor} e \textit{Virginica}.
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=\columnwidth]{output/matriz_confusao_3classes.png}
+    \caption{Matrizes de confusão: original (esquerda) e corrigida (direita).}
+    \label{fig:matriz}
+\end{figure}
+
+As fronteiras de decisão projetadas no plano dos dois primeiros componentes principais (PCA) mostram partições contínuas, suaves e bem calibradas para as três espécies.
+
+\section{Conclusão}
+A depuração da MLP evidenciou a importância do rigor matemático na implementação de redes neurais. A correção da regra da cadeia no gradiente, aliada ao pré-processamento por Z-score e à substituição de MSE por Softmax/Cross-Entropy, permitiu que a rede classificasse com facilidade todas as três espécies de flores com $96{,}67\%$ de acurácia. A análise de convergência delimitou com precisão o ponto de equilíbrio de generalização antes do surgimento de \textit{overfitting}.
+
+\vspace{10pt}
+\noindent\textbf{Repositório Git e Notebook Interativo:} \\
+O código-fonte integral, figuras e o arquivo \texttt{NN\_scratch\_iris\_resolvido.ipynb} estão disponíveis em: \\
+\url{https://github.com/JPeeeeee/visaoComputacional}
+
+\end{document}

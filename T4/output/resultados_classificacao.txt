@@ -1,0 +1,32 @@
+RESULTADOS DA CLASSIFICACAO K-NN - DATASET IRIS
+============================================================
+
+COMPARACAO DE ACURACIA POR VALOR DE K:
+    Acuracia (4D Original)  Acuracia (PCA 2D)
+k                                            
+1                 0.966667           0.933333
+3                 0.933333           0.900000
+5                 0.933333           0.900000
+7                 0.966667           0.900000
+9                 0.966667           0.900000
+11                0.966667           0.900000
+
+MODELO FINAL (K=3):
+Acuracia Teste (4D): 93.33%
+
+RELATORIO DE METRICAS:
+              precision    recall  f1-score   support
+
+      setosa       1.00      1.00      1.00        10
+  versicolor       0.83      1.00      0.91        10
+   virginica       1.00      0.80      0.89        10
+
+    accuracy                           0.93        30
+   macro avg       0.94      0.93      0.93        30
+weighted avg       0.94      0.93      0.93        30
+
+
+MATRIZ DE CONFUSAO:
+[[10  0  0]
+ [ 0 10  0]
+ [ 0  2  8]]
